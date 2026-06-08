@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Кейсы</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg-color: #0b0f19; /* Глубокий темный реалистичный фон */
+            --card-bg: #161b26;  /* Цвет карточек */
+            --border-color: #232a3b;
+            --text-color: #ffffff;
+            --text-muted: #626c81;
+            --accent-purple: #5c55a6; /* Фирменный цвет кнопок со скриншота */
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+
+        /* Верхняя панель: Заголовок + Баланс */
+        .header-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 5px;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 0;
+        }
+
+        /* Кнопка баланса в правом верхнем углу */
+        .balance-badge {
+            background-color: #171d2c;
+            border: 1px solid var(--border-color);
+            padding: 6px 14px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .balance-badge:active {
+            background-color: var(--border-color);
+        }
+        .balance-plus {
+            color: var(--text-muted);
+            font-size: 16px;
+            margin-left: 2px;
+        }
+
+        /* Вкладки выбора кейсов (переименованные) */
+        .tabs-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        .tab-btn {
+            flex: 1;
+            background-color: #171d2c;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 12px 6px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 48px;
+            box-sizing: border-box;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background-color: #1c2336;
+            border-color: #434b66;
+            color: var(--text-color);
+            box-shadow: inset 0 0 10px rgba(255,255,255,0.05);
+        }
+
+        /* Лента прокрутки кейсов */
+        .carousel-container {
+            position: relative;
+            margin: 30px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Маркер центра по центру ленты */
+        .center-indicator {
+            position: absolute;
+            top: -12px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 10px solid #7c62d9;
+            z-index: 10;
+        }
+
+        .cases-line {
+            display: flex;
+            gap: 12px;
+            overflow-hidden: hidden;
+            width: 100%;
+            justify-content: center;
+        }
+
+        /* Реалистичные строгие карточки наград */
+        .case-card {
+            min-width: 95px;
+            height: 125px;
+            background: linear-gradient(135deg, #171d2b 0%, #121722 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-sizing: border-box;
+        }
+        .case-card.highlight {
+            border: 1px solid #333d57;
+            box-shadow: 0 0 15px rgba(0,0,0,0.4);
+        }
+        .card-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+        }
+        .card-type {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+        .card-value {
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        /* Демо режим */
+        .demo-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 35px 5px 25px 5px;
+        }
+        .demo-text {
+            font-size: 15px;
+            color: #8a94a6;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 26px;
+        }
+        .switch input { display: none; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #1e2538;
+            transition: .3s;
+            border-radius: 34px;
+            border: 1px solid var(--border-color);
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px; width: 18px;
+            left: 3px; bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #3b4257; }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        /* Главная кнопка открытия */
+        .main-action-btn {
+            width: 100%;
+            background-color: var(--accent-purple);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            box-shadow: 0 4px 20px rgba(92, 85, 166, 0.15);
+        }
+        .main-action-btn:active {
+            background-color: #4a448a;
+        }
+
+        /* Реалистичное модальное окно (Пополнение) */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background-color: #121824;
+            border: 1px solid var(--border-color);
+            padding: 24px;
+            border-radius: 20px;
+            width: 85%;
+            max-width: 320px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .modal-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+        .modal-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+        .stars-input {
+            width: 100%;
+            background-color: #192030;
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 16px;
+            text-align: center;
+            outline: none;
+            box-sizing: border-box;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+        }
+        .modal-btn.cancel {
+            background-color: #1c2336;
+            color: var(--text-color);
+        }
+        .modal-btn.confirm {
+            background-color: var(--accent-purple);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="content">
+        <!-- Верхняя панель со скриншота -->
+        <div class="header-panel">
+            <h1>Кейсы</h1>
+            <div class="balance-badge" onclick="openDepositModal()">
+                <span>⭐ <span id="balance-val">0</span></span>
+                <span class="balance-plus">+</span>
+            </div>
+        </div>
+
+        <!-- Переименованные вкладки без мультяшности -->
+        <div class="tabs-container">
+            <div class="tab-btn active" onclick="selectCase('daily', 1, this)">
+                <div>Ежедневный кейс</div>
+            </div>
+            <div class="tab-btn" onclick="selectCase('standard', 25, this)">
+                <div>За 25 звёзд</div>
+            </div>
+            <div class="tab-btn" onclick="selectCase('all_in', 50, this)">
+                <div>За 50 звёзд</div>
+            </div>
+        </div>
+
+        <!-- Карусель рулетки -->
+        <div class="carousel-container">
+            <div class="center-indicator"></div>
+            <div class="cases-line">
+                <div class="case-card" id="card-left">
+                    <div class="card-icon">🌹</div>
+                    <div class="card-type">Редкий</div>
+                    <div class="card-value">25 ⭐️</div>
+                </div>
+                <div class="case-card highlight" id="card-center">
+                    <div class="card-icon">✖️</div>
+                    <div class="card-type">Обычный</div>
+                    <div class="card-value">0 ⭐️</div>
+                </div>
+                <div class="case-card" id="card-right">
+                    <div class="card-icon">✖️</div>
+                    <div class="card-type">Обычный</div>
+                    <div class="card-value">0 ⭐️</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Демо режим -->
+        <div class="demo-container">
+            <span class="demo-text">Демо режим</span>
+            <label class="switch">
+                <input type="checkbox" id="demo-toggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <!-- Кнопка Открытия (Цифр выбора количества под ней НЕТ) -->
+        <button class="main-action-btn" id="open-btn" onclick="tryOpenCase()">Открыть кейс — 1 ⭐️</button>
+    </div>
+
+    <!-- Модальное окно пополнения баланса Звёздами -->
+    <div class="modal" id="deposit-modal">
+        <div class="modal-content">
+            <div class="modal-title">Пополнение баланса</div>
+            <div class="modal-desc">Введите количество Telegram Stars для покупки. Вам будет выслана ссылка на оплату.</div>
+            <input type="number" class="stars-input" id="stars-amount" placeholder="Количество" min="1" value="50">
+            <div class="modal-actions">
+                <button class="modal-btn cancel" onclick="closeDepositModal()">Отмена</button>
+                <button class="modal-btn confirm" onclick="sendDepositRequest()">Пополнить</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        let currentCost = 1;
+        let caseType = 'daily';
+        let isSpinning = false;
+        const items = [
+            {icon: '✖️', type: 'Обычный', val: '0 ⭐️'},
+            {icon: '🌹', type: 'Редкий', val: '25 ⭐️'},
+            {icon: '💎', type: 'Эпик', val: '100 ⭐️'},
+            {icon: '👑', type: 'Легенда', val: '250 ⭐️'}
+        ];
+
+        function selectCase(type, cost, element) {
+            if (isSpinning) return;
+            caseType = type;
+            currentCost = cost;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+            document.getElementById('open-btn').innerText = `Открыть кейс — ${cost} ⭐️`;
+        }
+
+        /* Логика окон пополнения */
+        function openDepositModal() {
+            document.getElementById('deposit-modal').style.display = 'flex';
+        }
+
+        function closeDepositModal() {
+            document.getElementById('deposit-modal').style.display = 'none';
+        }
+
+        function sendDepositRequest() {
+            const amount = document.getElementById('stars-amount').value;
+            if (amount < 1) return;
+            
+            // Отправляем запрос боту на инвойс
+            tg.sendData(JSON.stringify({
+                action: "deposit_stars",
+                amount: parseInt(amount)
+            }));
+            
+            closeDepositModal();
+            tg.showAlert("⏳ Запрос на оплату отправлен боту. Закройте Mini App, чтобы увидеть ссылку!");
+        }
+
+        function tryOpenCase() {
+            if (isSpinning) return;
+            const isDemo = document.getElementById('demo-toggle').checked;
+
+            if (isDemo) {
+                startAnimate();
+            } else {
+                // Запрос боту на проверку баланса для открытия кейса
+                tg.sendData(JSON.stringify({
+                    action: "open_case",
+                    type: caseType,
+                    cost: currentCost
+                }));
+            }
+        }
+
+        function startAnimate() {
+            isSpinning = true;
+            let ticks = 0;
+            
+            function run() {
+                ticks++;
+                document.getElementById('card-left').innerHTML = createCardContent(items[Math.floor(Math.random()*items.length)]);
+                document.getElementById('card-center').innerHTML = createCardContent(items[Math.floor(Math.random()*items.length)]);
+                document.getElementById('card-right').innerHTML = createCardContent(items[Math.floor(Math.random()*items.length)]);
+                
+                if(ticks < 20) {
+                    setTimeout(run, 90);
+                } else {
+                    isSpinning = false;
+                    tg.showAlert("Кейс успешно открыт!");
+                }
+            }
+            run();
+        }
+
+        function createCardContent(item) {
+            return `<div class="card-icon">${item.icon}</div><div class="card-type">${item.type}</div><div class="card-value">${item.val}</div>`;
+        }
+
+        window.addEventListener('message', (event) => {
+            if (event.data === 'case_ok_start') {
+                startAnimate();
+            }
+        });
+    </script>
+</body>
+</html>
